@@ -2,10 +2,13 @@ import os
 
 from faker import Faker
 from whoosh.fields import *
-from whoosh.index import create_in
+from whoosh.index import create_in,open_dir
 from whoosh.qparser import QueryParser
 import pandas as pd
-os.chdir(r'E:\search_engine')
+#os.chdir(r'D:\DB_Search_engine')
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 #schema = Schema(Agent_name=TEXT(stored=True), Ph=ID(stored=True), desc=TEXT,
 #                email=ID(),
@@ -25,8 +28,9 @@ class searchEngine(object):
         
         if not os.path.exists(self.__SEARCH_NAME__):
             os.mkdir(self.__SEARCH_NAME__)
-    
-        self.index = create_in(self.__SEARCH_NAME__, schema)
+            self.index = create_in(self.__SEARCH_NAME__, schema)
+        else:
+            self.index=open_dir(self.__SEARCH_NAME__)
     def create_schema(self):
         """
         dict :
@@ -38,12 +42,14 @@ class searchEngine(object):
         
         return schema
         
-    def add_documents(self,list_of_tuples):
+    def add_documents(self,dict_):
         writer = self.index.writer()
 #        print(type(writer))
-        for t in list_of_tuples:
+        #for k,v in dict_.items():
 #            print(t)
-            writer.add_document(Agent_name=t[0],Ph=t[1],desc=t[2],email=t[3],date=t[4])
+            
+            #writer.add_document()
+        writer.add_document(**dict_)
         writer.commit()
         return 'docuemnt added'
     
@@ -56,32 +62,17 @@ class searchEngine(object):
         with self.index.searcher() as searcher:
             query = QueryParser(feild, self.index.schema).parse(query_string)
             results = searcher.search(query,limit=5,terms=True)
-            res=results.docs()
+            res=dict(results[0])
             print(results.docs())
 #            res.append(results[0])
 #            print(results)
-        return list(res)
+        print(res)
+        return res
     
-
-#fake.name()     
-
-def fake_data_generator(n_rows=10):
-    fake = Faker()
-    list_of_tuples=[]
-    for _ in range(n_rows):
-        list_of_tuples.append((fake.name(),fake.phone_number(),fake.text(),fake.email(),
-                               fake.date()))
-    
-    return list_of_tuples
-    
-
 if __name__=='__main__':
-     lot=fake_data_generator()   
-     sample_df=pd.DataFrame(lot)
-     db_name='clean_try'
-     sch_dict=dict(Agent_name=TEXT(stored=True), Ph=ID(stored=True), desc=TEXT,
-                             email=ID(),
-                             date=DATETIME())
+     db_name=config['DB_NAME']['name']
+     schema=config['SCHEMA']
+     sch_dict=dict(schema.items())
      se=searchEngine(db_name,sch_dict)
      se.add_documents(lot)
      print(sample_df.iloc[4,2].split(' ')[0])
