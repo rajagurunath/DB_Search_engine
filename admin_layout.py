@@ -15,6 +15,7 @@ import pandas as pd
 from whoosh.fields import *
 import configparser
 from search_eng import searchEngine
+#from search_eng_layout import srchlayout
 config = configparser.ConfigParser()
 global_n_clicks=0
 str_to_fn={
@@ -53,57 +54,43 @@ def admin(schema):
 app=dash.Dash()
 app.config['suppress_callback_exceptions']=True
 #div=admin(sch_dict)
-tab=dt.DataTable(                   rows=df.to_dict('records'),
-                                            row_selectable=True,
-                                            id='datatable',
-                                            columns=df.columns,
-                                            selected_row_indices=[])
-app.layout=html.Div([
+adminlayout=html.Div([
                      
-                     html.H1('Search engine'),
-                     dcc.Tabs(id='page-value',tabs=[
-                                        {'label':'Admin','value':1},
-                                        {'label':'Customer','value':2},],                                      
-                                    vertical=True,
-                                    style={'backgroundColor':'#2196F3','width':'20%'}),
-                    html.Div(id='page-output'),  
-                    #html.Div(tab,style={'width':'50%','margin-left': '457px'}),
+                    html.H1('Search engine'),
+                    admin(sch_dict),
                      ])
 
-srchlayout=html.Div([html.Div([dcc.Input(id='search-input', 
-                                           value='Search', type='text',
-                                           style={'width': '49%','align':'center'}),
-                                           html.Button('Search',id='search-button')],style={'align':'center','margin-left': '457px'}),
-                                           #html.Div(id='datatable'),
-                                           html.Div(tab,style={'width':'50%','margin-left': '457px'}),
-                                           
-                                            ])
-
-@app.callback(Output('page-output', 'children'), [Input('page-value', 'value')])
-
-def give_layout_for_outer_tabs(value):
-    if value==1:
-        return admin(sch_dict)
-    if value==2:
-        df=pd.DataFrame({'agent_name': 'vel', 'email': 'Enter email', 'loc': 'Enter loc', 'ph': 'Enter ph'},index=[1])
-
-        #tab=dt.DataTable(rows=df.to_dict('records'),
-         #                            id='search-results',
-         #                           row_selectable=True,
-         #                         columns=list(sch_dict.keys()),
-         #                            selected_row_indices=[])
-        
-        return srchlayout
-        return html.Div([html.Div([dcc.Input(id='search-input', 
-                                           value='Search', type='text',
-                                           style={'width': '49%','align':'center'}),
-                                           html.Button('Search',id='search-button')],style={'align':'center','margin-left': '457px'}),
-                                           #html.Div(id='datatable'),
-                                           html.Div(tab,style={'width':'50%','margin-left': '457px'}),
-                                           
-                                            ])
-    return None
+# index_page = html.Div([
+#     dcc.Link('Admin Page', href='/adminpage'),
+#     html.Br(),
+#     dcc.Link('Search Engine', href='/SE'),
+#     html.Br(),           
+# ])
+#  app.layout = html.Div([
+#  dcc.Location(id='url', refresh=False),
+#  html.Div(id='page-content'),
+# ])
+app.layout=adminlayout
     
+
+@app.callback(Output('page-content', 'children'),
+              [Input('url', 'pathname')])
+def display_page(pathname):
+    print(pathname)
+    if pathname == '/adminpage':
+        print('admin',adminlayout)
+        return adminlayout
+    elif pathname == '/SE':
+
+        """
+        datatable not working when passed with divs
+        """
+        
+        return html.Label(['Link to search engine', html.A('link', href='192.168.55.96:8051')])
+
+    else:
+        return index_page
+
 
 app.css.append_css({
     'external_url': ['https://codepen.io/chriddyp/pen/bWLwgP.css',
@@ -142,7 +129,6 @@ def generate_table(dataframe):
         ]) for i in range(len(dataframe))]
     )
     
-
 @app.callback(Output('datatable', 'rows'),[Input('search-input','value'),Input('search-button','n_clicks')] ) 
 def search_db(text,n_clicks):
     global global_srch_clicks

@@ -1,0 +1,10 @@
+
+
+Dear ${PERSON_NAME}, 
+
+FROM  : - {from_place} TO : -{to_place}
+MOB: -{mob_number}
+
+This is a test message. 
+Have a great weekend! 
+Yours Truly
