@@ -1,10 +1,11 @@
 
 
 Dear ${PERSON_NAME}, 
-
-FROM  : - {from_place} TO : -{to_place}
-MOB: -{mob_number}
-
+Customer Name={cust_name}
+Customer Requirement :{comments}
+MOB: -{mobile_number}
+date:-{date}
+email: -{email}
 This is a test message. 
 Have a great weekend! 
 Yours Truly

@@ -5,6 +5,7 @@ from whoosh.fields import *
 from whoosh.index import create_in,open_dir
 from whoosh.qparser import QueryParser
 import pandas as pd
+from utility import fake_data_generator
 #os.chdir(r'D:\DB_Search_engine')
 import configparser
 config = configparser.ConfigParser()
@@ -68,7 +69,14 @@ class searchEngine(object):
 #            print(results)
         print(res)
         return res
-    
+    def get_all_documents(self):
+        return self.index.searcher().documents()
+class sqlitedb():
+    def __init__():
+        pass
+    def searrch(self, parameter_list):
+        pass
+        
 if __name__=='__main__':
      db_name=config['DB_NAME']['name']
      schema=config['SCHEMA']
@@ -80,3 +88,15 @@ if __name__=='__main__':
      num=se.search_index('desc',sample_df.iloc[4,2].split(' ')[0])
      print(num)
      print(sample_df.iloc[num,2])
+    # from whoosh.query import *
+    # from whoosh.qparser import MultifieldParser
+    # ix=open_dir(r'F:\searchEngine\DB_Search_engine\Database\UserDB')
+    # query_string='guru'
+    # list(ix.searcher().documents())
+    # with ix.searcher() as searcher:
+    #     parser = MultifieldParser(['name','location'], ix.schema)
+    #     parser.parse(query_string)
+    #     results = searcher.search(query,limit=5,terms=True)
+    #     for hit in results:
+    #         print(hit['name'])
+    #     print(results[0])    

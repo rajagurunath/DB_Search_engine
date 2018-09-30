@@ -1,4 +1,5 @@
 from faker import Faker
+import sqlite3
 import pandas as pd
 from string import Template
 import smtplib
@@ -8,7 +9,9 @@ import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
 credentials=config['Web_credentials']
-
+"""
+>>> send_msg(['test_guru'],['rajagurunath05@gmail.com'],['ch one','pammal','9444531254','abc@gmail.com'])
+"""
 
 def fake_data_generator(n_rows=100):
     fake = Faker()
@@ -31,7 +34,28 @@ def get_contacts(filename):
             names.append(a_contact.split()[0])
             emails.append(a_contact.split()[1])
     return names, emails
-
+def dataframe(dbname):
+        
+    path='{}.db'.format(dbname)
+    conn=sqlite3.connect(path)
+    if dbname=='userdb':table='usertable'
+    if dbname=='agentdb':table='agenttable'
+    df=pd.read_sql('select * from {}'.format(table),conn)
+    conn.close()
+    return df
+def export_csv(self,csvfilename):
+    return self.dataframe(self.config['dname']).to_csv(csvfilename,index=False)
+def get_table_names(dbname):
+    con = sqlite3.connect('{}.db'.format(dbname))
+    cursor = con.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    return cursor.fetchall()
+def get_always():
+    agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
+    con = sqlite3.connect('agentdb.db')
+    cursor = con.cursor()
+    cursor.execute("SELECT * FROM agenttable WHERE always='1';")
+    return pd.DataFrame(cursor.fetchall(),columns=agent_schema)
 
 def send_msg(names:list,emails:list,places:list):
     """
@@ -40,16 +64,23 @@ def send_msg(names:list,emails:list,places:list):
 
     """
     
-    names, emails = get_contacts() # read contacts
-    message_template = read_template('message.txt')
+    #names, emails = get_contacts() # read contacts
+    message_template = read_template('msg_template.txt')
 
     # set up the SMTP server
     MY_ADDRESS=credentials['email']
     PASSWORD=credentials['password']
     s = smtplib.SMTP(host='smtp.gmail.com', port=587)
+    #s.ehlo()
+
     s.starttls()
     s.login(MY_ADDRESS, PASSWORD)
 
+    message = message_template.substitute(cust_name=places[0])
+    message = message_template.substitute(mobile_number=places[1])
+    message = message_template.substitute(email=places[2])
+    message = message_template.substitute(date=places[3])
+    message = message_template.substitute(comments=places[4])
     # For each contact, send the email:
     for name, email in zip(names, emails):
         msg = MIMEMultipart()       # create a message
@@ -63,7 +94,7 @@ def send_msg(names:list,emails:list,places:list):
         # setup the parameters of the message
         msg['From']=MY_ADDRESS
         msg['To']=email
-        msg['Subject']="This is TEST"
+        msg['Subject']="Customer details"
         
         # add in the message body
         msg.attach(MIMEText(message, 'plain'))

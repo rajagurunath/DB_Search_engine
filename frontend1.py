@@ -167,6 +167,6 @@ def search_db(text,n_clicks):
             #return html.Div(tab)
             return df.to_dict('records')
 if __name__=='__main__':
-    app.run_server(debug=True,host='192.168.55.96')
+    app.run_server(debug=True,host='0.0.0.0')
 
     
