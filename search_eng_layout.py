@@ -38,7 +38,7 @@ app.config['suppress_callback_exceptions']=True
 tab=dt.DataTable(                   rows=[{}],
                                             row_selectable=True,
                                             id='datatable',
-                                            columns=agent_schema,
+                                            columns=agent_schema[:-1],
                                             selected_row_indices=[])
 
 info_layout=html.Div([
@@ -100,7 +100,7 @@ srchlayout=html.Div([html.Br(),html.Br(),html.Div([
                                             ])
 
                                         
-app.layout=info_layout
+app.layout=srchlayout
 @app.callback(Output('datatable', 'rows'),[Input('search-input','value'),Input('search-button','n_clicks')] ) 
 def search_db(text,n_clicks):
     global global_srch_clicks
@@ -166,6 +166,9 @@ def info_layout_update(cat_type,requirement,name,comm_type,contact,n_clicks):
             add_documents('userdb',update_dict)
             return html.H4('Thanks for contacting,will share the quote shortly')
 def send_mail(info,selected_names=None,selected_emails=None):
+    """
+    TODO: add selected rows from datatable
+    """
     df=get_always()
     names=df['name'].tolist()
     emails=df['email'].tolist()
@@ -178,4 +181,4 @@ app.css.append_css({
                      'https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css',]
 })
 if __name__=='__main__':
-    app.run_server(debug=True,port=8051)
+    app.run_server(debug=True,host='0.0.0.0',port=8051)

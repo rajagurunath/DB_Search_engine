@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+#from flask_sqlalchemy import SQLAlchemy
 from whooshalchemy import IndexService
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,7 +9,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 import pandas as pd
 import sqlite3
-import flask_whooshalchemy as wa 
+#import flask_whooshalchemy as wa 
 import os
 
 config = {"WHOOSH_BASE": os.path.join(os.getcwd(),"Database")}

@@ -4,7 +4,7 @@ Created on Sat Sep 22 20:56:46 2018
 
 @author: welcome
 """
-
+import dash_auth
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
@@ -13,6 +13,7 @@ from dash.dependencies import Input, Output
 import plotly
 import pandas as pd 
 from whoosh.fields import *
+from utitility import dataframe
 import configparser
 from search_eng import searchEngine
 #from search_eng_layout import srchlayout
@@ -28,6 +29,9 @@ str_to_fn={
 
 
 }
+VALID_USERNAME_PASSWORD_PAIRS = [
+    ['hello', 'world']
+]
 config.read('config.ini')
 db_name=config['DB_NAME']['name']
 schema=config['SCHEMA']
@@ -36,8 +40,11 @@ sch_dict=dict(schema.items())
 sch_dict={k:str_to_fn[v] for k,v in sch_dict.items()}
 se=searchEngine(db_name,sch_dict)
 df=pd.DataFrame({'agent_name': 'vel', 'email': 'Enter email', 'loc': 'Enter loc', 'ph': 'Enter ph'},index=[1])
+user_schema=['id','name','mobile_number','email','date','comments']
+agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
 
 #df=pd.DataFrame(columns=list(sch_dict.keys()))
+
 
 def admin(schema):
     """
@@ -47,17 +54,40 @@ def admin(schema):
     #for k,v in schema.items():
     #    div_list.append(html.Div([html.H5(k),dcc.Input(id='{}'.format(k),value='Enter {}'.format(k), type=k)],className='row'))
     div=[html.Div([html.H5(k.title().replace('_',' '),className='four columns',style={'left-margin':'40%'}),dcc.Input(id='{}'.format(k),value='Enter {}'.format(k), type=k,className='four columns',style={'left-margin':'40%'})],className='row') for k in schema.keys()]
+
     print(div)
-    return  html.Div([html.H5('Admin',style={'margin-left': '28%'}),html.Div(div),html.Button('Update',id='db-update'),
+    return  html.Div([html.H5('Admin',style={'margin-left': '28%'}),html.Div(tab,style={'width':'60%','margin-left': '400px'})
+                                ,html.Button('Update',id='db-update'),
                                 html.Div(id='db-update-output')],style={'margin-left': '457px'})
 
+df=dataframe('agentdb')
 app=dash.Dash()
 app.config['suppress_callback_exceptions']=True
 #div=admin(sch_dict)
+# auth = dash_auth.BasicAuth(
+#     app,
+#     VALID_USERNAME_PASSWORD_PAIRS
+# )
+
+tab=dt.DataTable(rows=df.to_dict('records'),
+                editable=True,
+                id='datatable',
+                columns=agent_schema,
+                selected_row_indices=[],
+                id='admin-update-table')
 adminlayout=html.Div([
                      
                     html.H1('Search engine'),
-                    admin(sch_dict),
+                    html.Div(tab,style={'width':'60%','margin-left': '400px'}),
+                    html.Br(),
+                    html.Br(),
+                    html.Div([html.Button('Update',id='update-button'),html.Button('Export',id='export-button')],className='row',
+                                            style={'width':'60%','margin-left': '400px'}),
+                    html.Div(id='db-update-output'),
+                
+                    # html.Div([html.H5('Admin',style={'margin-left': '28%'}),,
+                    #             html.Button('Update',id='db-update'),
+                    #             html.Div(id='db-update-output')],style={'margin-left': '457px'}),
                      ])
 
 # index_page = html.Div([
@@ -96,6 +126,55 @@ app.css.append_css({
     'external_url': ['https://codepen.io/chriddyp/pen/bWLwgP.css',
                      'https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css',]
 })
+def update_download_link_defect(n_clicks,selected_row_indices):
+    """
+    Update the download link with new data after every purging of 
+    Duplicate testcases
+    """
+    
+    global global_n_clicks
+    if n_clicks==None:global_n_clicks=0
+        
+    if n_clicks!=None:
+        if n_clicks-global_n_clicks==1:
+            df_copy.reset_index(drop=True,inplace=True)
+    
+            df_copy.drop(selected_row_indices,inplace=True)
+            dff = df_copy
+            
+            csv_string = dff.to_csv(index=False, encoding='utf-8')
+            csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+            
+            global_n_clicks=n_clicks
+    
+    
+    
+            return two_columns_grid(html.H3('After removing duplicate testcases {}'.format(df_copy.shape[0]),className='dup-count'),
+                          html.A(
+                            html.H5('Download unique testcases'),
+                            id='download-unique-testcases',
+                            download="unique_testcases.csv",
+                            href=csv_string,
+                            target="_blank",
+                            className='download-link')) 
+@app.callback(Output('db-update-output', 'children'),Input('update-button','n_clicks')) 
+def update_db(*lot):
+    global global_n_clicks
+    n_clicks=list(lot)[-1] # which returns n_clicks 
+    if n_clicks==None:global_n_clicks=0
+    print('n_clicks',n_clicks,global_n_clicks)
+
+    if n_clicks!=None:
+        if n_clicks-global_n_clicks>0:
+            #print(n_clicks)
+            print(lot)
+            up_v=dict.fromkeys(sch_dict.keys())
+            for idx,key in enumerate(up_v):
+                up_v[key]=lot[idx]
+            print(up_v)
+            global_n_clicks=n_clicks
+            se.add_documents(up_v)
+            return 'updated'
 
 update_input=[Input( k, 'value') for k in sch_dict.keys() ]
 update_input.append(Input('db-update','n_clicks'))
@@ -153,6 +232,6 @@ def search_db(text,n_clicks):
             #return html.Div(tab)
             return df.to_dict('records')
 if __name__=='__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True,host='0.0.0.0')
 
     
