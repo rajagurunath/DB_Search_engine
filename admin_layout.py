@@ -4,6 +4,7 @@ Created on Sat Sep 22 20:56:46 2018
 
 @author: welcome
 """
+import urllib
 import dash_auth
 import dash
 import dash_html_components as html
@@ -11,14 +12,18 @@ import dash_core_components as dcc
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output
 import plotly
+import simplejson
+
 import pandas as pd 
 from whoosh.fields import *
-from utitility import dataframe
+from dbclass import add_documents
+from utility import dataframe
 import configparser
 from search_eng import searchEngine
 #from search_eng_layout import srchlayout
 config = configparser.ConfigParser()
-global_n_clicks=0
+update_clicks=0
+export_n_clicks=0
 str_to_fn={
     'TEXT':TEXT(stored=True),
     'ID':ID(stored=True),
@@ -61,6 +66,7 @@ def admin(schema):
                                 html.Div(id='db-update-output')],style={'margin-left': '457px'})
 
 df=dataframe('agentdb')
+
 app=dash.Dash()
 app.config['suppress_callback_exceptions']=True
 #div=admin(sch_dict)
@@ -68,22 +74,37 @@ app.config['suppress_callback_exceptions']=True
 #     app,
 #     VALID_USERNAME_PASSWORD_PAIRS
 # )
-
-tab=dt.DataTable(rows=df.to_dict('records'),
+d=dict.fromkeys(agent_schema)
+tab=dt.DataTable(
+                rows=[d for i in range(10)],
                 editable=True,
                 id='datatable',
+                row_selectable=True,
+                row_update=True,
                 columns=agent_schema,
-                selected_row_indices=[],
-                id='admin-update-table')
+                )
+
+
 adminlayout=html.Div([
                      
                     html.H1('Search engine'),
                     html.Div(tab,style={'width':'60%','margin-left': '400px'}),
                     html.Br(),
+                    html.Div(html.Button('Update',id='update-button'),style={'width':'90%','margin-left': '400px'}),
                     html.Br(),
-                    html.Div([html.Button('Update',id='update-button'),html.Button('Export',id='export-button')],className='row',
-                                            style={'width':'60%','margin-left': '400px'}),
+
+                    html.Div([html.Div(dcc.Dropdown(id='dbname',        options=[
+                                            {'label': 'Agent', 'value': 'agentdb'},
+                                            {'label': 'User', 'value': 'userdb'},
+                                            ],
+                                            value='agentdb'),
+                                            style={'align':'center','margin-left': '1px','width':'290px'},
+                                            className='one columns'),
+                    
+                    html.Div(id='export-button',className='row',)]
+                                            ,style={'width':'90%','margin-left': '400px'},className='row'),
                     html.Div(id='db-update-output'),
+                    #html.Div(id='export-output')
                 
                     # html.Div([html.H5('Admin',style={'margin-left': '28%'}),,
                     #             html.Button('Update',id='db-update'),
@@ -103,99 +124,124 @@ adminlayout=html.Div([
 app.layout=adminlayout
     
 
-@app.callback(Output('page-content', 'children'),
-              [Input('url', 'pathname')])
-def display_page(pathname):
-    print(pathname)
-    if pathname == '/adminpage':
-        print('admin',adminlayout)
-        return adminlayout
-    elif pathname == '/SE':
+# @app.callback(Output('page-content', 'children'),
+#               [Input('url', 'pathname')])
+# def display_page(pathname):
+#     print(pathname)
+#     if pathname == '/adminpage':
+#         print('admin',adminlayout)
+#         return adminlayout
+#     elif pathname == '/SE':
 
-        """
-        datatable not working when passed with divs
-        """
+#         """
+#         datatable not working when passed with divs
+#         """
         
-        return html.Label(['Link to search engine', html.A('link', href='192.168.55.96:8051')])
+#         return html.Label(['Link to search engine', html.A('link', href='192.168.55.96:8051')])
 
-    else:
-        return index_page
+#     else:
+#         return index_page
 
 
 app.css.append_css({
     'external_url': ['https://codepen.io/chriddyp/pen/bWLwgP.css',
                      'https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css',]
 })
-def update_download_link_defect(n_clicks,selected_row_indices):
+
+@app.callback(Output('export-button', 'children'),
+              [Input('dbname','value'),
+              ])
+def update_download_link_defect(dbname):
     """
     Update the download link with new data after every purging of 
     Duplicate testcases
     """
     
-    global global_n_clicks
-    if n_clicks==None:global_n_clicks=0
+    # global export_n_clicks
+    # if n_clicks==None:export_n_clicks=0
         
-    if n_clicks!=None:
-        if n_clicks-global_n_clicks==1:
-            df_copy.reset_index(drop=True,inplace=True)
-    
-            df_copy.drop(selected_row_indices,inplace=True)
-            dff = df_copy
-            
-            csv_string = dff.to_csv(index=False, encoding='utf-8')
-            csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
-            
-            global_n_clicks=n_clicks
-    
-    
-    
-            return two_columns_grid(html.H3('After removing duplicate testcases {}'.format(df_copy.shape[0]),className='dup-count'),
-                          html.A(
-                            html.H5('Download unique testcases'),
-                            id='download-unique-testcases',
-                            download="unique_testcases.csv",
-                            href=csv_string,
-                            target="_blank",
-                            className='download-link')) 
-@app.callback(Output('db-update-output', 'children'),Input('update-button','n_clicks')) 
-def update_db(*lot):
-    global global_n_clicks
-    n_clicks=list(lot)[-1] # which returns n_clicks 
-    if n_clicks==None:global_n_clicks=0
-    print('n_clicks',n_clicks,global_n_clicks)
+    # if n_clicks!=None:
+    #     if n_clicks-export_n_clicks==1:
+    df=dataframe(dbname)
+    df.reset_index(drop=True,inplace=True)
 
-    if n_clicks!=None:
-        if n_clicks-global_n_clicks>0:
-            #print(n_clicks)
-            print(lot)
-            up_v=dict.fromkeys(sch_dict.keys())
-            for idx,key in enumerate(up_v):
-                up_v[key]=lot[idx]
-            print(up_v)
-            global_n_clicks=n_clicks
-            se.add_documents(up_v)
-            return 'updated'
+#          df_copy.drop(selected_row_indices,inplace=True)
 
-update_input=[Input( k, 'value') for k in sch_dict.keys() ]
-update_input.append(Input('db-update','n_clicks'))
-@app.callback(Output('db-update-output', 'children'),update_input ) 
-def update_db(*lot):
-    global global_n_clicks
-    n_clicks=list(lot)[-1] # which returns n_clicks 
-    if n_clicks==None:global_n_clicks=0
-    print('n_clicks',n_clicks,global_n_clicks)
+#         dff = df_copy
     
+    csv_string = df.to_csv(index=False, encoding='utf-8')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+    
+    #export_n_clicks=n_clicks
+
+
+
+    return html.A(
+                    html.Button('Export'),
+                    id='Export',
+                    download="{}.csv".format(dbname),
+                    href=csv_string,
+                    target="_blank",
+                    className='download-link') 
+
+
+@app.callback(Output('db-update-output', 'children'),
+              [Input('datatable','rows'),
+              Input('update-button','n_clicks')
+              ])
+def update_db(rows,n_clicks):
+    global update_clicks
+    if n_clicks==None:update_clicks=0
+    print('n_clicks',n_clicks,update_clicks)
     if n_clicks!=None:
-        if n_clicks-global_n_clicks>0:
-            #print(n_clicks)
-            print(lot)
-            up_v=dict.fromkeys(sch_dict.keys())
-            for idx,key in enumerate(up_v):
-                up_v[key]=lot[idx]
-            print(up_v)
-            global_n_clicks=n_clicks
-            se.add_documents(up_v)
+        if n_clicks-update_clicks>0:
+            df=pd.DataFrame(rows)
+            df=df.dropna()
+            for dict_ in df.to_dict('records'):
+                add_documents('agentdb',dict_)
+            
+            update_clicks=n_clicks
+            
             return 'updated'
+# @app.callback(Output('db-update-output', 'children'),[Input('update-button','n_clicks')]) 
+# def update_db(*lot):
+#     global global_n_clicks
+#     n_clicks=list(lot)[-1] # which returns n_clicks 
+#     if n_clicks==None:global_n_clicks=0
+#     print('n_clicks',n_clicks,global_n_clicks)
+
+#     if n_clicks!=None:
+#         if n_clicks-global_n_clicks>0:
+#             #print(n_clicks)
+#             print(lot)
+#             up_v=dict.fromkeys(sch_dict.keys())
+#             for idx,key in enumerate(up_v):
+#                 up_v[key]=lot[idx]
+#             print(up_v)
+#             global_n_clicks=n_clicks
+#             se.add_documents(up_v)
+#             return 'updated'
+
+# update_input=[Input( k, 'value') for k in sch_dict.keys() ]
+# update_input.append(Input('db-update','n_clicks'))
+# #@app.callback(Output('db-update-output', 'children'),update_input ) 
+# def update_db(*lot):
+#     global global_n_clicks
+#     n_clicks=list(lot)[-1] # which returns n_clicks 
+#     if n_clicks==None:global_n_clicks=0
+#     print('n_clicks',n_clicks,global_n_clicks)
+    
+#     if n_clicks!=None:
+#         if n_clicks-global_n_clicks>0:
+#             #print(n_clicks)
+#             print(lot)
+#             up_v=dict.fromkeys(sch_dict.keys())
+#             for idx,key in enumerate(up_v):
+#                 up_v[key]=lot[idx]
+#             print(up_v)
+#             global_n_clicks=n_clicks
+#             se.add_documents(up_v)
+#             return 'updated'
 
 def generate_table(dataframe):
     return (
@@ -208,29 +254,29 @@ def generate_table(dataframe):
         ]) for i in range(len(dataframe))]
     )
     
-@app.callback(Output('datatable', 'rows'),[Input('search-input','value'),Input('search-button','n_clicks')] ) 
-def search_db(text,n_clicks):
-    global global_srch_clicks
-    if n_clicks==None:global_srch_clicks=0
-    print('n_clicks',n_clicks,global_srch_clicks)
-    if n_clicks!=None:
-        if n_clicks-global_srch_clicks>0:
-            res=se.search_index('agent_name',text)
-            print(res)
-            df=pd.DataFrame(res,index=range(int(len(res)/4)))
-            print(df.head())
-            print(list(sch_dict.keys()))
-            tab=dt.DataTable(rows=df.to_dict('records'),
-                                            row_selectable=True,
-                                            columns=list(sch_dict.keys()),
-                                            selected_row_indices=[])
+# @app.callback(Output('datatable', 'rows'),[Input('search-input','value'),Input('search-button','n_clicks')] ) 
+# def search_db(text,n_clicks):
+#     global global_srch_clicks
+#     if n_clicks==None:global_srch_clicks=0
+#     print('n_clicks',n_clicks,global_srch_clicks)
+#     if n_clicks!=None:
+#         if n_clicks-global_srch_clicks>0:
+#             res=se.search_index('agent_name',text)
+#             print(res)
+#             df=pd.DataFrame(res,index=range(int(len(res)/4)))
+#             print(df.head())
+#             print(list(sch_dict.keys()))
+#             tab=dt.DataTable(rows=df.to_dict('records'),
+#                                             row_selectable=True,
+#                                             columns=list(sch_dict.keys()),
+#                                             selected_row_indices=[])
             
-            #print(df.shape,df)
-            #return generate_table(df)
-            global_srch_clicks=n_clicks
-            print(tab)
-            #return html.Div(tab)
-            return df.to_dict('records')
+#             #print(df.shape,df)
+#             #return generate_table(df)
+#             global_srch_clicks=n_clicks
+#             print(tab)
+#             #return html.Div(tab)
+#             return df.to_dict('records')
 if __name__=='__main__':
     app.run_server(debug=True,host='0.0.0.0')
 
