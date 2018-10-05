@@ -123,6 +123,7 @@ adminlayout=html.Div([
 # ])
 app.layout=adminlayout
     
+server = app.server # the Flask app
 
 # @app.callback(Output('page-content', 'children'),
 #               [Input('url', 'pathname')])
@@ -280,4 +281,4 @@ def generate_table(dataframe):
 if __name__=='__main__':
     app.run_server(debug=True,host='0.0.0.0')
 
-    
+

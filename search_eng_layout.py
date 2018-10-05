@@ -43,18 +43,28 @@ tab=dt.DataTable(                   rows=[{}],
 
 info_layout=html.Div([
                     html.Div([
-                                         html.Div(dcc.Dropdown(id='info-category-type',        options=[
+                                    #    html.Div(dcc.Dropdown(id='info-category-type',        options=[
+                                    #         {'label': 'Travel', 'value': 'Travel'},
+                                    #         {'label': 'Hotels', 'value': 'Hotels'},
+                                    #         ],
+                                    #         value='Travel'),
+                                    #         style={'align':'center','width':'290px','height':'30%'},
+                                    #         className='one columns'),  
+                                            
+                        html.Br(),
+                        html.Div([html.Div(dcc.Dropdown(id='info-category-type',        options=[
                                             {'label': 'Travel', 'value': 'Travel'},
                                             {'label': 'Hotels', 'value': 'Hotels'},
                                             ],
                                             value='Travel'),
                                             style={'align':'center','width':'290px','height':'30%'},
                                             className='one columns'),
-                                           dcc.Input(id='requirement', 
-                                           value='requirement', type='text',
-                                           style={'width': '49%','align':'center'},className='five columns'),
-                                           ],
-                                           className='row'),
+                          html.Div(dcc.Input(id='res', 
+                          value='Enter your Requirements', 
+                          type='text',
+                          style={'width': '60%','height':'200px','align':'center','margin-left':'1%'}),className='six columns')],
+                                             className='row'),
+                        html.Br(),
                     html.Div([html.H5('Name :',className='two columns'),dcc.Input(id='info-name', 
                                            value='name', type='text',
                                            style={'width': '20%','align':'center'},className='Three columns')],className='row'),
@@ -75,7 +85,7 @@ info_layout=html.Div([
                     
                     html.Button('Send Details',id='senddetails'),
                     html.Div(id='thank-msg'),
-                    ])
+                    ])])
 srchlayout=html.Div([html.Br(),html.Br(),html.Div([
                                          html.Div(dcc.Dropdown(id='category-type',        options=[
                                             {'label': 'Travel', 'value': 'Travel'},
@@ -165,6 +175,8 @@ def info_layout_update(cat_type,requirement,name,comm_type,contact,n_clicks):
             global_info_clicks=n_clicks
             add_documents('userdb',update_dict)
             return html.H4('Thanks for contacting,will share the quote shortly')
+
+
 def send_mail(info,selected_names=None,selected_emails=None):
     """
     TODO: add selected rows from datatable
@@ -182,3 +194,15 @@ app.css.append_css({
 })
 if __name__=='__main__':
     app.run_server(debug=True,host='0.0.0.0',port=8051)
+
+# import numpy as np
+
+# x=np.random.randint(1,10,size=(10))
+# x.shape
+# y=np.random.randint(1,10,size=(5,10))
+# y.shape
+# np.dot(y,x)
+
+# np.array([np.dot(r,x)for r in y])
+# np.matmul(x,y)
+# np.sum(y*x,axis=1)
