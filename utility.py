@@ -12,7 +12,7 @@ credentials=config['Web_credentials']
 """
 >>> send_msg(['test_guru'],['rajagurunath05@gmail.com'],['ch one','pammal','9444531254','abc@gmail.com'])
 """
-
+credentials={'email':'rajagurunath5@gmail.com','password':'gurunath05'}
 def fake_data_generator(n_rows=100):
     fake = Faker()
     list_of_tuples=[]
@@ -57,7 +57,7 @@ def get_always():
     cursor.execute("SELECT * FROM agenttable WHERE always='1';")
     return pd.DataFrame(cursor.fetchall(),columns=agent_schema)
 
-def send_msg(names:list,emails:list,places:list):
+def send_msg(names:list,emails:list,places:dict):
     """
     names,emails
 
@@ -76,17 +76,19 @@ def send_msg(names:list,emails:list,places:list):
     s.starttls()
     s.login(MY_ADDRESS, PASSWORD)
 
-    message = message_template.substitute(cust_name=places[0])
-    message = message_template.substitute(mobile_number=places[1])
-    message = message_template.substitute(email=places[2])
-    message = message_template.substitute(date=places[3])
-    message = message_template.substitute(comments=places[4])
     # For each contact, send the email:
     for name, email in zip(names, emails):
         msg = MIMEMultipart()       # create a message
 
         # add in the actual person name to the message template
-        message = message_template.substitute(PERSON_NAME=name.title())
+        message = message_template.substitute(PERSON_NAME=name.title(),cust_name=places['name'],
+                                                mobile_number=places['mobile_number'],
+                                                email=places['email'],date=places['date'],comments=places['comments'])
+        # message = message_template.substitute(cust_name=places[0])
+        # message = message_template.substitute(mobile_number=places[1])
+        # message = message_template.substitute(email=places[2])
+        # message = message_template.substitute(date=places[3])
+        # message = message_template.substitute(comments=places[4])
 
         # Prints out the message body for our sake
         print(message)
@@ -97,12 +99,16 @@ def send_msg(names:list,emails:list,places:list):
         msg['Subject']="Customer details"
         
         # add in the message body
-        msg.attach(MIMEText(message, 'plain'))
+        msg.attach(MIMEText(message, 'html'))
         
         # send the message via the server set up earlier.
         s.send_message(msg)
         del msg
-        
+
+
+
+
 if __name__=='__main__':
      sample_df=fake_data_generator()   
      sample_df.to_csv('sample_data.csv',index=False)     
+     send_msg(['guru'],['gurunathrajagopal@gmail.com'],['test1']*5)

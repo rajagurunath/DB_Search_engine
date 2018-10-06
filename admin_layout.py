@@ -12,7 +12,7 @@ import dash_core_components as dcc
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output
 import plotly
-import simplejson
+#import simplejson
 
 import pandas as pd 
 from whoosh.fields import *
@@ -197,10 +197,12 @@ def update_db(rows,n_clicks):
     if n_clicks!=None:
         if n_clicks-update_clicks>0:
             df=pd.DataFrame(rows)
+            df['always']=df['always'].apply(bool)
+            #print(df.dtypes)
             df=df.dropna()
             for dict_ in df.to_dict('records'):
                 add_documents('agentdb',dict_)
-            
+
             update_clicks=n_clicks
             
             return 'updated'

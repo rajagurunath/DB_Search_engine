@@ -1,4 +1,5 @@
 import dash
+from threading import Thread
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_table_experiments as dt
@@ -59,7 +60,7 @@ info_layout=html.Div([
                                             value='Travel'),
                                             style={'align':'center','width':'290px','height':'30%'},
                                             className='one columns'),
-                          html.Div(dcc.Input(id='res', 
+                          html.Div(dcc.Input(id='requirement', 
                           value='Enter your Requirements', 
                           type='text',
                           style={'width': '60%','height':'200px','align':'center','margin-left':'1%'}),className='six columns')],
@@ -146,13 +147,20 @@ def get_quote(n_clicks):
             print('inside',n_clicks,global_quote_clicks)
             global_quote_clicks=n_clicks
             return html.Div(info_layout,style={'width':'100%','margin-left': '400px'})
-@app.callback(Output('thank-msg', 'children'),[Input('info-category-type','value'),
+@app.callback(Output('thank-msg', 'children'),
+[Input('info-category-type','value'),
 Input('requirement','value'),
 Input('info-name','value'),
 Input('info-comm-type','value'),
 Input('contact-details','value'),
-Input('senddetails','n_clicks')] ) 
-def info_layout_update(cat_type,requirement,name,comm_type,contact,n_clicks):
+Input('senddetails','n_clicks'),
+Input('datatable','rows'),
+Input('datatable','selected_row_indices')
+] ) 
+def info_layout_update(cat_type,requirement,name,comm_type,contact,n_clicks,rows,sle_rows):
+    
+    df=pd.DataFrame(rows)
+    print('selected',df)
     global global_info_clicks
     if n_clicks==None:global_info_clicks=0
     print('n_clicks',n_clicks,global_info_clicks)
@@ -174,9 +182,24 @@ def info_layout_update(cat_type,requirement,name,comm_type,contact,n_clicks):
                 update_dict['email']=contact
             global_info_clicks=n_clicks
             add_documents('userdb',update_dict)
+            print('selected rows',df.iloc[sle_rows])
+            df=df.iloc[sle_rows]
+            thr=Thread(target=send_mail,args=[update_dict,df['name'].tolist(),df['email'].tolist()])
+            thr.start()
+            #send_mail(update_dict,df['name'].tolist(),df['email'].tolist())
+            #send_mail()
             return html.H4('Thanks for contacting,will share the quote shortly')
 
-
+# @app.callback(
+#     Output('',''),
+    
+#     [Input('info-category-type','value'),
+#     Input('requirement','value'),
+#     Input('info-name','value'),
+#     Input('info-comm-type','value'),
+#     Input('contact-details','value'),
+#     Input('senddetails','n_clicks')]
+# )
 def send_mail(info,selected_names=None,selected_emails=None):
     """
     TODO: add selected rows from datatable
@@ -184,6 +207,9 @@ def send_mail(info,selected_names=None,selected_emails=None):
     df=get_always()
     names=df['name'].tolist()
     emails=df['email'].tolist()
+    if len(names)==0 and len(emails)==0:
+        names=[]
+        emails=[]
     names.extend(selected_names)
     emails.extend(selected_emails)
     send_msg(names,emails,info)

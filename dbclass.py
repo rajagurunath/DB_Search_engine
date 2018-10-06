@@ -4,7 +4,7 @@ from whooshalchemy import IndexService
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Column
-from sqlalchemy.types import Integer, Text, DateTime,BOOLEAN
+from sqlalchemy.types import Integer, Text, DateTime,BOOLEAN,Boolean
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 import pandas as pd
@@ -42,7 +42,7 @@ class AgentDB(Base):
     whatsapp=Column(Integer)
     mobile_number = Column(Integer)
     email=Column(Text)
-    always=Column(BOOLEAN)
+    always=Column(Boolean)
     def __repr__(self):
         return '{0}(title={1},location={2})'.format(self.__class__.__name__, self.name,self.location)
         #return '({},{})'.format(self.name,self.location)

@@ -1,11 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+</style>
+</head>
+<body>
 
+<h2>Customer Requirements</h2>
+<p>Customer wants to contact you for following queries</p>
 
-Dear ${PERSON_NAME}, 
-Customer Name={cust_name}
-Customer Requirement :{comments}
-MOB: -{mobile_number}
-date:-{date}
-email: -{email}
-This is a test message. 
-Have a great weekend! 
-Yours Truly
+<table style="width:100%">
+  <caption>Details</caption>
+  <tr>
+    <th>Name</th>
+    <th>Requirement</th>
+    <th>MOB</th>
+    <th>date</th>
+    <th>email</th>
+  </tr>
+  <tr>
+    <td>$cust_name</td>
+    <td>$comments</td>
+    <td>$mobile_number</td>
+    <td>$date</td>
+
+    <td>$email</td>
+  </tr>
+</table>
+
+</body>
+</html>
+<html>
+<h4>Thanks</h4>
+</html>
+
