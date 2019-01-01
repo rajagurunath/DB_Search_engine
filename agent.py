@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Sep 22 20:56:46 2018
-
-@author: welcome
-"""
 import urllib
+import numpy as np
 import dash_auth
 import dash
 import dash_html_components as html
@@ -12,45 +7,27 @@ import dash_core_components as dcc
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output
 import plotly
-#import simplejson
-
 import pandas as pd 
-from whoosh.fields import *
-from dbclass import add_documents
+from mongodb_tables import add_documents,return_dataframe
 from utility import dataframe
 import configparser
-from search_eng import searchEngine
+
 #from search_eng_layout import srchlayout
 config = configparser.ConfigParser()
 update_clicks=0
 export_n_clicks=0
-str_to_fn={
-    'TEXT':TEXT(stored=True),
-    'ID':ID(stored=True),
-    'KEYWORD':KEYWORD(),
-    'NUMERIC':NUMERIC,
-    'DATETIME':DATETIME,
-    'NGRAM':NGRAM
 
-
-}
-VALID_USERNAME_PASSWORD_PAIRS = [
-    ['hello', 'world']
-]
 config.read('config.ini')
 db_name=config['DB_NAME']['name']
 schema=config['SCHEMA']
-sch_dict=dict(schema.items())
-#print([str_to_fn[v] for k,v in schema.items()])
-sch_dict={k:str_to_fn[v] for k,v in sch_dict.items()}
-se=searchEngine(db_name,sch_dict)
+
+VALID_USERNAME_PASSWORD_PAIRS = [
+    [config['login_details']['usr'],config['login_details']['pw']]
+]
+
 df=pd.DataFrame({'agent_name': 'vel', 'email': 'Enter email', 'loc': 'Enter loc', 'ph': 'Enter ph'},index=[1])
-user_schema=['id','name','mobile_number','email','date','comments']
 agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
-
-#df=pd.DataFrame(columns=list(sch_dict.keys()))
-
-
+agent_schema=[i.title() for i in agent_schema]
 def admin(schema):
     """
     {'agent_name': 'TEXT', 'ph': 'ID', 'loc': 'TEXT', 'email': 'ID'}
@@ -65,18 +42,23 @@ def admin(schema):
                                 ,html.Button('Update',id='db-update'),
                                 html.Div(id='db-update-output')],style={'margin-left': '457px'})
 
-df=dataframe('agentdb')
-
+df=return_dataframe('agentdb')
+df.columns=df.columns.str.title()
 app=dash.Dash()
 app.config['suppress_callback_exceptions']=True
-#div=admin(sch_dict)
-# auth = dash_auth.BasicAuth(
-#     app,
-#     VALID_USERNAME_PASSWORD_PAIRS
-# )
+
+auth = dash_auth.BasicAuth(
+     app,
+     VALID_USERNAME_PASSWORD_PAIRS
+)
+server = app.server
+#df1=pd.DataFrame(np.nan,columns=agent_schema)
+#df=df.append(df1,ignore_index=False)
+
+print(df.to_dict('records'))
 d=dict.fromkeys(agent_schema)
 tab=dt.DataTable(
-                rows=[d for i in range(10)],
+                rows=df.to_dict('records'),
                 editable=True,
                 id='datatable',
                 row_selectable=True,
@@ -87,29 +69,53 @@ tab=dt.DataTable(
 
 adminlayout=html.Div([
                      
-                    html.H1('Search engine'),
-                    html.Div(tab,style={'width':'60%','margin-left': '400px'}),
+                    html.H3('Admin page'),
+                    html.Div([
+                    html.A(html.Button('Update Record'),id='update-record',href='/details',
+                                                                style={'margin-left': '100px'}),
+                    html.A(html.Button('Export Record'),id='export-record',href='/export',
+                                                                style={'margin-left': '100px'}),
+                           ],className='row'),
+                                 
+                    ])
+                    
+agentDetails=html.Div([
+                    html.H3('Admin Details'),
+#                    html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'}),
+                    html.Div(tab,style={'width':'80%','margin-left': '100px'}),
+
+                    #html.Div(tab,style={'width':'60%','margin-left': '400px'}),
                     html.Br(),
+                    
                     html.Div(html.Button('Update',id='update-button'),style={'width':'90%','margin-left': '400px'}),
                     html.Br(),
-
-                    html.Div([html.Div(dcc.Dropdown(id='dbname',        options=[
-                                            {'label': 'Agent', 'value': 'agentdb'},
-                                            {'label': 'User', 'value': 'userdb'},
-                                            ],
-                                            value='agentdb'),
-                                            style={'align':'center','margin-left': '1px','width':'290px'},
-                                            className='one columns'),
-                    
-                    html.Div(id='export-button',className='row',)]
-                                            ,style={'width':'90%','margin-left': '400px'},className='row'),
                     html.Div(id='db-update-output'),
+
+                    ])
+
+exportlayout=html.Div([
+        html.A(html.Button('Home'),id='home',href='/',
+                                        style={'margin-left': '10px'}),
+        
+       html.Div([html.Br(),html.Div(dcc.RadioItems(id='dbname',        options=[
+                                            {'label': 'Agent Details', 'value': 'agentdb'},
+                                            {'label': 'Customer Details', 'value': 'userdb'},
+                                            ],
+                                            value='agentdb',
+                                            labelStyle={'display': 'inline-block'}),
+                                            style={'margin-left': '1px','width':'55%'},
+                                            ),
+                    html.Br(),
+                    html.Div(id='export-button')]
+                                            ,style={'width':'90%','margin-left': '30%',
+                                            'marin-top':'50%'}
+                                           ,className='column' )])
                     #html.Div(id='export-output')
                 
                     # html.Div([html.H5('Admin',style={'margin-left': '28%'}),,
                     #             html.Button('Update',id='db-update'),
                     #             html.Div(id='db-update-output')],style={'margin-left': '457px'}),
-                     ])
+#                     ])
 
 # index_page = html.Div([
 #     dcc.Link('Admin Page', href='/adminpage'),
@@ -121,8 +127,14 @@ adminlayout=html.Div([
 #  dcc.Location(id='url', refresh=False),
 #  html.Div(id='page-content'),
 # ])
-app.layout=adminlayout
-    
+                    
+app.title='ADMIN'
+#app.layout=adminlayout
+app.layout=html.Div([dcc.Location(id='url', refresh=False),
+                    html.Div(id='main-layout'),
+                        html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+])
+
 server = app.server # the Flask app
 
 # @app.callback(Output('page-content', 'children'),
@@ -149,6 +161,23 @@ app.css.append_css({
                      'https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css',]
 })
 
+@app.callback(dash.dependencies.Output('main-layout', 'children'),
+              [dash.dependencies.Input('url', 'pathname')])
+
+#@app.callback(Output('main-layout', 'children'),[Input('getquote','n_clicks')] ) 
+def return_layout(pathname):
+    #print('pathname',pathname)
+    if pathname=='/':
+        #print('ind')
+        return adminlayout
+    elif pathname=='/details':
+        return agentDetails
+        return html.Div(info_layout,style={'width':'100%','margin-left': '100px'})
+    elif pathname=='/export' :
+        return exportlayout
+    
+
+    
 @app.callback(Output('export-button', 'children'),
               [Input('dbname','value'),
               ])
@@ -163,7 +192,7 @@ def update_download_link_defect(dbname):
         
     # if n_clicks!=None:
     #     if n_clicks-export_n_clicks==1:
-    df=dataframe(dbname)
+    df=return_dataframe(dbname)
     df.reset_index(drop=True,inplace=True)
 
 #          df_copy.drop(selected_row_indices,inplace=True)
@@ -185,6 +214,9 @@ def update_download_link_defect(dbname):
                     target="_blank",
                     className='download-link') 
 
+def str2bool(v):
+  return v.lower() in ("yes", "true","y")
+
 
 @app.callback(Output('db-update-output', 'children'),
               [Input('datatable','rows'),
@@ -196,16 +228,22 @@ def update_db(rows,n_clicks):
     print('n_clicks',n_clicks,update_clicks)
     if n_clicks!=None:
         if n_clicks-update_clicks>0:
-            df=pd.DataFrame(rows)
-            df['always']=df['always'].apply(bool)
-            #print(df.dtypes)
-            df=df.dropna()
-            for dict_ in df.to_dict('records'):
-                add_documents('agentdb',dict_)
-
-            update_clicks=n_clicks
-            
-            return 'updated'
+            try:
+                df=pd.DataFrame(rows)
+                df.dropna(inplace=True)
+                df['always']=df['always(Y/N)'].apply(str2bool)
+                #df['always']=df['always'].apply(bool)
+                df.drop('always(Y/N)',axis=1,inplace=True)
+                #print(df.dtypes)
+                df=df.dropna()
+                df.columns=df.columns.str.replace('id','ID')
+                for dict_ in df.to_dict('records'):
+                    add_documents('agentdb',dict_)
+    
+                update_clicks=n_clicks
+            except Exception as e:
+                return html.H6('Update failed due to {}'.format(e))
+            return html.H6('updated')
 # @app.callback(Output('db-update-output', 'children'),[Input('update-button','n_clicks')]) 
 # def update_db(*lot):
 #     global global_n_clicks
