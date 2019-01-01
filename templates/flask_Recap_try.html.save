@@ -1,0 +1,9 @@
+<html>
+<script src='https://www.google.com/recaptcha/api.js'></script>
+  <form id="demo-form" action="/feedback" method="POST">
+			<button>submit</button>
+  	<div class="g-recaptcha" data-sitekey="6Lcl4HMUAAAAAMlXek5LnT_hP4rXbIbcYNSsMmm9" data-theme="light" data-type="image" data-size="normal" data-tabindex="0"></div>
+
+</form>		
+</html>
+        

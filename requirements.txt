@@ -12,6 +12,7 @@ dash-renderer==0.13.2
 decorator==4.3.0
 Faker==0.9.1
 Flask==1.0.2
+flask_recaptcha
 Flask-Compress==1.4.0
 idna==2.7
 ipython-genutils==0.2.0

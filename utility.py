@@ -32,16 +32,14 @@ def get_contacts(filename):
             emails.append(a_contact.split()[1])
     return names, emails
 def dataframe(dbname):
-    try:
-        path='{}.db'.format(dbname)
-        conn=sqlite3.connect(path)
-        if dbname=='userdb':table='usertable'
-        if dbname=='agentdb':table='agenttable'
-        df=pd.read_sql('select * from {}'.format(table),conn)
-        conn.close()
-        return df
-    except Exception as e:
-        print('connecting exception {}'.format(e))
+        
+    path='{}.db'.format(dbname)
+    conn=sqlite3.connect(path)
+    if dbname=='userdb':table='usertable'
+    if dbname=='agentdb':table='agenttable'
+    df=pd.read_sql('select * from {}'.format(table),conn)
+    conn.close()
+    return df
 def export_csv(self,csvfilename):
     return self.dataframe(self.config['dname']).to_csv(csvfilename,index=False)
 def get_table_names(dbname):

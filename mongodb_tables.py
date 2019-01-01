@@ -2,15 +2,12 @@ from mongoengine import *
 from datetime import datetime
 import json
 import pandas as pd
-connect('agentdb')
-#user_schema=['id','name','mobile_number','email','date','comments']
-#agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
 
-user_schema=['ID','name','mobile_number','email','date','comments']
-agent_schema=['ID','category','name','location','whatsapp','mobile_number','email','always']
+user_schema=['id','name','mobile_number','email','date','comments']
+agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
+
 
 class User(Document):
-    ID=IntField(primary_key=True)
     name = StringField()
     mobile_number=IntField()
     email=StringField()
@@ -40,10 +37,13 @@ class Agent(Document):
         }
     ]}
 
+
 def add_documents(dbname,update_dict):
     """
     dbname='userdb' or agentdb
     """
+    connect(dbname)
+
     if dbname=='userdb':
         add=User(**update_dict)
     elif dbname=='agentdb':
@@ -56,7 +56,10 @@ def srch_documents(dbname,query):
     dbname='userdb' or agentdb
     """    
     print(dbname)
+    connect(dbname)
+
     if dbname=='userdb':
+
        res=json.loads(User.objects.search_text(query).to_json())
             #res_list.append(res)
         # res['id']=UserDB.__dict__['id']
@@ -69,7 +72,9 @@ def srch_documents(dbname,query):
     elif dbname=='agentdb':
         res=json.loads(Agent.objects.search_text(query).to_json())
     return res
+
 def return_dataframe(dbname):
+    connect(dbname)
     if dbname=='userdb':
         df=pd.DataFrame(json.loads(User.objects().to_json()),columns=user_schema)
         df['date']=df['date'].apply(lambda x:datetime.fromtimestamp(x['$date']/1000))
@@ -81,16 +86,23 @@ def export_csv(dbname,csvfilename):
     df=return_dataframe(dbname)
     return df.to_csv(csvfilename,index=False)
 def give_unique(dbname,feild):
+    connect(dbname)
+
     if dbname=='userdb':
         temp=User.objects()
     elif dbname=='agentdb':
         temp=Agent.objects()
     return temp.distinct(feild)
+def get_always():
+    agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
+    connect('agentdb')
+    temp=Agent.objects(always=True)
+    return pd.DataFrame(json.loads(temp.to_json()),columns=agent_schema)
 
 if __name__=='__main__':
-    user_dict=dict(ID=1,name='lasttry',mobile_number=9444532122,email='guru@gmail.com',
+    user_dict=dict(name='lasttry',mobile_number=9444532122,email='guru@gmail.com',
     date=datetime.strptime('29/09/2018','%d/%m/%Y'),comments='very good')
-    agent_dict=dict(ID=1,category='travel',name='lasttry ,agent',location='san francisco',whatsapp=94444526172,
+    agent_dict=dict(category='travel',name='lasttry ,agent',location='san francisco',whatsapp=94444526172,
     mobile_number = 874308230823,email='qba@gmail.com',always=True)
 
 
