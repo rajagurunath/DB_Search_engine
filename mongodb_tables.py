@@ -2,11 +2,15 @@ from mongoengine import *
 from datetime import datetime
 import json
 import pandas as pd
-connect('userdb')
-user_schema=['id','name','mobile_number','email','date','comments']
-agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
+connect('agentdb')
+#user_schema=['id','name','mobile_number','email','date','comments']
+#agent_schema=['id','category','name','location','whatsapp','mobile_number','email','always']
+
+user_schema=['ID','name','mobile_number','email','date','comments']
+agent_schema=['ID','category','name','location','whatsapp','mobile_number','email','always']
 
 class User(Document):
+    ID=IntField(primary_key=True)
     name = StringField()
     mobile_number=IntField()
     email=StringField()
@@ -21,6 +25,7 @@ class User(Document):
 
 
 class Agent(Document):
+    ID=IntField(primary_key=True)
     category=StringField()
     name=StringField()
     location=StringField()
@@ -83,9 +88,9 @@ def give_unique(dbname,feild):
     return temp.distinct(feild)
 
 if __name__=='__main__':
-    user_dict=dict(name='lasttry',mobile_number=9444532122,email='guru@gmail.com',
+    user_dict=dict(ID=1,name='lasttry',mobile_number=9444532122,email='guru@gmail.com',
     date=datetime.strptime('29/09/2018','%d/%m/%Y'),comments='very good')
-    agent_dict=dict(category='travel',name='lasttry ,agent',location='san francisco',whatsapp=94444526172,
+    agent_dict=dict(ID=1,category='travel',name='lasttry ,agent',location='san francisco',whatsapp=94444526172,
     mobile_number = 874308230823,email='qba@gmail.com',always=True)
 
 
