@@ -12,7 +12,7 @@ credentials=config['Web_credentials']
 """
 >>> send_msg(['test_guru'],['xyz@gmail.com'],['ch one','pammal','9444531254','abc@gmail.com'])
 """
-credentials={'email':***********@gmail.com','password':'*********'}
+credentials={'email':'***********@gmail.com','password':'*********'}
 def fake_data_generator(n_rows=100):
     fake = Faker()
     list_of_tuples=[]
